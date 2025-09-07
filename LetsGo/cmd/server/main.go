@@ -2,7 +2,8 @@ package main
 
 import (
 	"log"
-	"github.com/GergesHany/Event-Streaming-System/internal/server"
+
+	"github.com/GergesHany/Event-Streaming-System/LetsGo/internal/server"
 )
 
 func main() {
