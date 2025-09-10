@@ -89,9 +89,9 @@ func (s *segment) Append(record *api.Record) (offset uint64, err error) {
 		// index offsets are relative to base offset: <baseOffset + indexOffset> = absoluteOffset
 		// So, to get the indexOffset, we subtract baseOffset from nextOffset
 		/*
-		           - baseOffset: the starting offset of the segment
-				   - nextOffset: the next available offset in the segment
-				   - (nextOffset - baseOffset): gives the relative offset within the segment
+			           - baseOffset: the starting offset of the segment
+					   - nextOffset: the next available offset in the segment
+					   - (nextOffset - baseOffset): gives the relative offset within the segment
 		*/
 		uint32(s.nextOffset-uint64(s.baseOffset)),
 		pos,
