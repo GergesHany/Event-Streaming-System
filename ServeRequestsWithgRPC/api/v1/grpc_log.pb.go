@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.8
 // 	protoc        v3.12.4
-// source: api/v1/log.proto
+// source: api/v1/grpc_log.proto
 
 package log_v1
 
@@ -30,7 +30,7 @@ type ProduceRequest struct {
 
 func (x *ProduceRequest) Reset() {
 	*x = ProduceRequest{}
-	mi := &file_api_v1_log_proto_msgTypes[0]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *ProduceRequest) String() string {
 func (*ProduceRequest) ProtoMessage() {}
 
 func (x *ProduceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_log_proto_msgTypes[0]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *ProduceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProduceRequest.ProtoReflect.Descriptor instead.
 func (*ProduceRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_log_proto_rawDescGZIP(), []int{0}
+	return file_api_v1_grpc_log_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ProduceRequest) GetRecord() *Record {
@@ -74,7 +74,7 @@ type ProduceResponse struct {
 
 func (x *ProduceResponse) Reset() {
 	*x = ProduceResponse{}
-	mi := &file_api_v1_log_proto_msgTypes[1]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *ProduceResponse) String() string {
 func (*ProduceResponse) ProtoMessage() {}
 
 func (x *ProduceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_log_proto_msgTypes[1]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +99,7 @@ func (x *ProduceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProduceResponse.ProtoReflect.Descriptor instead.
 func (*ProduceResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_log_proto_rawDescGZIP(), []int{1}
+	return file_api_v1_grpc_log_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ProduceResponse) GetOffset() uint64 {
@@ -118,7 +118,7 @@ type ConsumeRequest struct {
 
 func (x *ConsumeRequest) Reset() {
 	*x = ConsumeRequest{}
-	mi := &file_api_v1_log_proto_msgTypes[2]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -130,7 +130,7 @@ func (x *ConsumeRequest) String() string {
 func (*ConsumeRequest) ProtoMessage() {}
 
 func (x *ConsumeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_log_proto_msgTypes[2]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -143,7 +143,7 @@ func (x *ConsumeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsumeRequest.ProtoReflect.Descriptor instead.
 func (*ConsumeRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_log_proto_rawDescGZIP(), []int{2}
+	return file_api_v1_grpc_log_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ConsumeRequest) GetOffset() uint64 {
@@ -162,7 +162,7 @@ type ConsumeResponse struct {
 
 func (x *ConsumeResponse) Reset() {
 	*x = ConsumeResponse{}
-	mi := &file_api_v1_log_proto_msgTypes[3]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -174,7 +174,7 @@ func (x *ConsumeResponse) String() string {
 func (*ConsumeResponse) ProtoMessage() {}
 
 func (x *ConsumeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_log_proto_msgTypes[3]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +187,7 @@ func (x *ConsumeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsumeResponse.ProtoReflect.Descriptor instead.
 func (*ConsumeResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_log_proto_rawDescGZIP(), []int{3}
+	return file_api_v1_grpc_log_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ConsumeResponse) GetRecord() *Record {
@@ -207,7 +207,7 @@ type Record struct {
 
 func (x *Record) Reset() {
 	*x = Record{}
-	mi := &file_api_v1_log_proto_msgTypes[4]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -219,7 +219,7 @@ func (x *Record) String() string {
 func (*Record) ProtoMessage() {}
 
 func (x *Record) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_log_proto_msgTypes[4]
+	mi := &file_api_v1_grpc_log_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -232,7 +232,7 @@ func (x *Record) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Record.ProtoReflect.Descriptor instead.
 func (*Record) Descriptor() ([]byte, []int) {
-	return file_api_v1_log_proto_rawDescGZIP(), []int{4}
+	return file_api_v1_grpc_log_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Record) GetValue() []byte {
@@ -249,59 +249,59 @@ func (x *Record) GetOffset() uint64 {
 	return 0
 }
 
-var File_api_v1_log_proto protoreflect.FileDescriptor
+var File_api_v1_grpc_log_proto protoreflect.FileDescriptor
 
-const file_api_v1_log_proto_rawDesc = "" +
+const file_api_v1_grpc_log_proto_rawDesc = "" +
 	"\n" +
-	"\x10api/v1/log.proto\x12\x06log.v1\"8\n" +
-	"\x0eProduceRequest\x12&\n" +
-	"\x06record\x18\x01 \x01(\v2\x0e.log.v1.RecordR\x06record\")\n" +
+	"\x15api/v1/grpc_log.proto\x12\vgrpc.log.v1\"=\n" +
+	"\x0eProduceRequest\x12+\n" +
+	"\x06record\x18\x01 \x01(\v2\x13.grpc.log.v1.RecordR\x06record\")\n" +
 	"\x0fProduceResponse\x12\x16\n" +
 	"\x06offset\x18\x01 \x01(\x04R\x06offset\"(\n" +
 	"\x0eConsumeRequest\x12\x16\n" +
-	"\x06offset\x18\x01 \x01(\x04R\x06offset\"9\n" +
-	"\x0fConsumeResponse\x12&\n" +
-	"\x06record\x18\x02 \x01(\v2\x0e.log.v1.RecordR\x06record\"6\n" +
+	"\x06offset\x18\x01 \x01(\x04R\x06offset\">\n" +
+	"\x0fConsumeResponse\x12+\n" +
+	"\x06record\x18\x02 \x01(\v2\x13.grpc.log.v1.RecordR\x06record\"6\n" +
 	"\x06Record\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\fR\x05value\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\x04R\x06offset2\x8f\x02\n" +
-	"\x03Log\x12<\n" +
-	"\aProduce\x12\x16.log.v1.ProduceRequest\x1a\x17.log.v1.ProduceResponse\"\x00\x12<\n" +
-	"\aConsume\x12\x16.log.v1.ConsumeRequest\x1a\x17.log.v1.ConsumeResponse\"\x00\x12D\n" +
-	"\rConsumeStream\x12\x16.log.v1.ConsumeRequest\x1a\x17.log.v1.ConsumeResponse\"\x000\x01\x12F\n" +
-	"\rProduceStream\x12\x16.log.v1.ProduceRequest\x1a\x17.log.v1.ProduceResponse\"\x00(\x010\x01BRZPgithub.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1;log_v1b\x06proto3"
+	"\x06offset\x18\x02 \x01(\x04R\x06offset2\xb7\x02\n" +
+	"\x03Log\x12F\n" +
+	"\aProduce\x12\x1b.grpc.log.v1.ProduceRequest\x1a\x1c.grpc.log.v1.ProduceResponse\"\x00\x12F\n" +
+	"\aConsume\x12\x1b.grpc.log.v1.ConsumeRequest\x1a\x1c.grpc.log.v1.ConsumeResponse\"\x00\x12N\n" +
+	"\rConsumeStream\x12\x1b.grpc.log.v1.ConsumeRequest\x1a\x1c.grpc.log.v1.ConsumeResponse\"\x000\x01\x12P\n" +
+	"\rProduceStream\x12\x1b.grpc.log.v1.ProduceRequest\x1a\x1c.grpc.log.v1.ProduceResponse\"\x00(\x010\x01BRZPgithub.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1;log_v1b\x06proto3"
 
 var (
-	file_api_v1_log_proto_rawDescOnce sync.Once
-	file_api_v1_log_proto_rawDescData []byte
+	file_api_v1_grpc_log_proto_rawDescOnce sync.Once
+	file_api_v1_grpc_log_proto_rawDescData []byte
 )
 
-func file_api_v1_log_proto_rawDescGZIP() []byte {
-	file_api_v1_log_proto_rawDescOnce.Do(func() {
-		file_api_v1_log_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_v1_log_proto_rawDesc), len(file_api_v1_log_proto_rawDesc)))
+func file_api_v1_grpc_log_proto_rawDescGZIP() []byte {
+	file_api_v1_grpc_log_proto_rawDescOnce.Do(func() {
+		file_api_v1_grpc_log_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_v1_grpc_log_proto_rawDesc), len(file_api_v1_grpc_log_proto_rawDesc)))
 	})
-	return file_api_v1_log_proto_rawDescData
+	return file_api_v1_grpc_log_proto_rawDescData
 }
 
-var file_api_v1_log_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_api_v1_log_proto_goTypes = []any{
-	(*ProduceRequest)(nil),  // 0: log.v1.ProduceRequest
-	(*ProduceResponse)(nil), // 1: log.v1.ProduceResponse
-	(*ConsumeRequest)(nil),  // 2: log.v1.ConsumeRequest
-	(*ConsumeResponse)(nil), // 3: log.v1.ConsumeResponse
-	(*Record)(nil),          // 4: log.v1.Record
+var file_api_v1_grpc_log_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_api_v1_grpc_log_proto_goTypes = []any{
+	(*ProduceRequest)(nil),  // 0: grpc.log.v1.ProduceRequest
+	(*ProduceResponse)(nil), // 1: grpc.log.v1.ProduceResponse
+	(*ConsumeRequest)(nil),  // 2: grpc.log.v1.ConsumeRequest
+	(*ConsumeResponse)(nil), // 3: grpc.log.v1.ConsumeResponse
+	(*Record)(nil),          // 4: grpc.log.v1.Record
 }
-var file_api_v1_log_proto_depIdxs = []int32{
-	4, // 0: log.v1.ProduceRequest.record:type_name -> log.v1.Record
-	4, // 1: log.v1.ConsumeResponse.record:type_name -> log.v1.Record
-	0, // 2: log.v1.Log.Produce:input_type -> log.v1.ProduceRequest
-	2, // 3: log.v1.Log.Consume:input_type -> log.v1.ConsumeRequest
-	2, // 4: log.v1.Log.ConsumeStream:input_type -> log.v1.ConsumeRequest
-	0, // 5: log.v1.Log.ProduceStream:input_type -> log.v1.ProduceRequest
-	1, // 6: log.v1.Log.Produce:output_type -> log.v1.ProduceResponse
-	3, // 7: log.v1.Log.Consume:output_type -> log.v1.ConsumeResponse
-	3, // 8: log.v1.Log.ConsumeStream:output_type -> log.v1.ConsumeResponse
-	1, // 9: log.v1.Log.ProduceStream:output_type -> log.v1.ProduceResponse
+var file_api_v1_grpc_log_proto_depIdxs = []int32{
+	4, // 0: grpc.log.v1.ProduceRequest.record:type_name -> grpc.log.v1.Record
+	4, // 1: grpc.log.v1.ConsumeResponse.record:type_name -> grpc.log.v1.Record
+	0, // 2: grpc.log.v1.Log.Produce:input_type -> grpc.log.v1.ProduceRequest
+	2, // 3: grpc.log.v1.Log.Consume:input_type -> grpc.log.v1.ConsumeRequest
+	2, // 4: grpc.log.v1.Log.ConsumeStream:input_type -> grpc.log.v1.ConsumeRequest
+	0, // 5: grpc.log.v1.Log.ProduceStream:input_type -> grpc.log.v1.ProduceRequest
+	1, // 6: grpc.log.v1.Log.Produce:output_type -> grpc.log.v1.ProduceResponse
+	3, // 7: grpc.log.v1.Log.Consume:output_type -> grpc.log.v1.ConsumeResponse
+	3, // 8: grpc.log.v1.Log.ConsumeStream:output_type -> grpc.log.v1.ConsumeResponse
+	1, // 9: grpc.log.v1.Log.ProduceStream:output_type -> grpc.log.v1.ProduceResponse
 	6, // [6:10] is the sub-list for method output_type
 	2, // [2:6] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -309,26 +309,26 @@ var file_api_v1_log_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_api_v1_log_proto_init() }
-func file_api_v1_log_proto_init() {
-	if File_api_v1_log_proto != nil {
+func init() { file_api_v1_grpc_log_proto_init() }
+func file_api_v1_grpc_log_proto_init() {
+	if File_api_v1_grpc_log_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_log_proto_rawDesc), len(file_api_v1_log_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_grpc_log_proto_rawDesc), len(file_api_v1_grpc_log_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_api_v1_log_proto_goTypes,
-		DependencyIndexes: file_api_v1_log_proto_depIdxs,
-		MessageInfos:      file_api_v1_log_proto_msgTypes,
+		GoTypes:           file_api_v1_grpc_log_proto_goTypes,
+		DependencyIndexes: file_api_v1_grpc_log_proto_depIdxs,
+		MessageInfos:      file_api_v1_grpc_log_proto_msgTypes,
 	}.Build()
-	File_api_v1_log_proto = out.File
-	file_api_v1_log_proto_goTypes = nil
-	file_api_v1_log_proto_depIdxs = nil
+	File_api_v1_grpc_log_proto = out.File
+	file_api_v1_grpc_log_proto_goTypes = nil
+	file_api_v1_grpc_log_proto_depIdxs = nil
 }

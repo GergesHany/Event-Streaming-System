@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.12.4
-// source: api/v1/log.proto
+// source: api/v1/grpc_log.proto
 
 package log_v1
 
@@ -19,10 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Log_Produce_FullMethodName       = "/log.v1.Log/Produce"
-	Log_Consume_FullMethodName       = "/log.v1.Log/Consume"
-	Log_ConsumeStream_FullMethodName = "/log.v1.Log/ConsumeStream"
-	Log_ProduceStream_FullMethodName = "/log.v1.Log/ProduceStream"
+	Log_Produce_FullMethodName       = "/grpc.log.v1.Log/Produce"
+	Log_Consume_FullMethodName       = "/grpc.log.v1.Log/Consume"
+	Log_ConsumeStream_FullMethodName = "/grpc.log.v1.Log/ConsumeStream"
+	Log_ProduceStream_FullMethodName = "/grpc.log.v1.Log/ProduceStream"
 )
 
 // LogClient is the client API for Log service.
@@ -204,7 +204,7 @@ type Log_ProduceStreamServer = grpc.BidiStreamingServer[ProduceRequest, ProduceR
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Log_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "log.v1.Log",
+	ServiceName: "grpc.log.v1.Log",
 	HandlerType: (*LogServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -229,5 +229,5 @@ var Log_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "api/v1/log.proto",
+	Metadata: "api/v1/grpc_log.proto",
 }

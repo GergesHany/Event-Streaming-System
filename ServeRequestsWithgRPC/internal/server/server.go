@@ -51,7 +51,7 @@ func (s *grpcServer) Consume(ctx context.Context, req *api.ConsumeRequest) (*api
 func (s *grpcServer) ProduceStream(stream api.Log_ProduceStreamServer) error {
 	for {
 		// Recv blocks until it receives a message or an error
-		req, err := stream.Recv() 
+		req, err := stream.Recv()
 		if err != nil {
 			return err
 		}
