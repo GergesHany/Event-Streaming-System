@@ -4,7 +4,7 @@
 // 	protoc        v3.12.4
 // source: api/v1/log.proto
 
-package v1
+package log_v1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -269,7 +269,7 @@ const file_api_v1_log_proto_rawDesc = "" +
 	"\aProduce\x12\x16.log.v1.ProduceRequest\x1a\x17.log.v1.ProduceResponse\"\x00\x12<\n" +
 	"\aConsume\x12\x16.log.v1.ConsumeRequest\x1a\x17.log.v1.ConsumeResponse\"\x00\x12D\n" +
 	"\rConsumeStream\x12\x16.log.v1.ConsumeRequest\x1a\x17.log.v1.ConsumeResponse\"\x000\x01\x12F\n" +
-	"\rProduceStream\x12\x16.log.v1.ProduceRequest\x1a\x17.log.v1.ProduceResponse\"\x00(\x010\x01BKZIgithub.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1b\x06proto3"
+	"\rProduceStream\x12\x16.log.v1.ProduceRequest\x1a\x17.log.v1.ProduceResponse\"\x00(\x010\x01BRZPgithub.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1;log_v1b\x06proto3"
 
 var (
 	file_api_v1_log_proto_rawDescOnce sync.Once

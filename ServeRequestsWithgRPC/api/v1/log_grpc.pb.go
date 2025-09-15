@@ -4,7 +4,7 @@
 // - protoc             v3.12.4
 // source: api/v1/log.proto
 
-package v1
+package log_v1
 
 import (
 	context "context"

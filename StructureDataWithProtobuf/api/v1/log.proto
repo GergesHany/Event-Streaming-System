@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package log.v1;
+package log_v1;
 
-option go_package = "github.com/GergesHany/Event-Streaming-System/StructureDataWithProtobuf/api/v1";
+option go_package = "github.com/GergesHany/Event-Streaming-System/StructureDataWithProtobuf/api/v1;log_v1";
 
 message Record {
     bytes value = 1;
