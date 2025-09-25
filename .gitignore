@@ -30,3 +30,17 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# TLS/SSL certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+ca-key.pem
+ca.pem
+server-key.pem
+server.pem
+client-key.pem
+client.pem
