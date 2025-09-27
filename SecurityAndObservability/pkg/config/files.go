@@ -2,8 +2,9 @@ package config
 
 import (
 	"os"
-	"sync"
 	"path/filepath"
+	"sync"
+
 	"github.com/joho/godotenv"
 )
 
@@ -17,17 +18,17 @@ var (
 	NobodyClientKeyFile  = configFile("nobody-client-key.pem")
 	ACLModelFile         = configFile("model.conf")
 	ACLPolicyFile        = configFile("policy.csv")
-)	
+)
 
 // Singleton pattern to load workspace root only once
 
-var once sync.Once // ensure loadWorkspaceRoot is called only once
+var once sync.Once       // ensure loadWorkspaceRoot is called only once
 var workspaceRoot string // holds the workspace root path
 
 func loadWorkspaceRoot() string {
 	once.Do(func() {
 		cwd, _ := os.Getwd()
-		godotenv.Load(filepath.Join(cwd, ".env"));
+		godotenv.Load(filepath.Join(cwd, ".env"))
 		workspaceRoot = os.Getenv("WORKSPACE_ROOT")
 	})
 	return workspaceRoot
@@ -35,5 +36,5 @@ func loadWorkspaceRoot() string {
 
 func configFile(filename string) string {
 	var root string = loadWorkspaceRoot()
-	return filepath.Join(root, "SecureYourServices", "test", filename)
+	return filepath.Join(root, "SecurityAndObservability", "test", filename)
 }

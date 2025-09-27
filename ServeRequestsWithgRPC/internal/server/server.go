@@ -2,18 +2,26 @@ package server
 
 import (
 	"context"
+	"time"
 
 	api "github.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1"
 	"google.golang.org/grpc"
 
-
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"      // for chaining multiple interceptors
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"       // for authentication
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap" // for logging
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"    // for adding context tags to logs
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/trace"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // ensure grpcServer satisfies the api.LogServer interface
@@ -49,21 +57,49 @@ type grpcServer struct {
 
 func newgrpcServer(config *Config) (srv *grpcServer, err error) {
 	srv = &grpcServer{
-		Config: config,
+		Config:                 config,
 		UnimplementedLogServer: &api.UnimplementedLogServer{},
 	}
 	return srv, err
 }
 
 func NewGRPCServer(config *Config, opts ...grpc.ServerOption) (*grpc.Server, error) {
-	// Add the authentication interceptor (is basically a middleware) to the gRPC server options
-	Chain := grpc_middleware.ChainStreamServer(grpc_auth.StreamServerInterceptor(authenticate))
+	// Set up Zap logger (structured logging)
+	logger := zap.L().Named("server")
+	zapOpts := []grpc_zap.Option{
+		grpc_zap.WithDurationField(func(duration time.Duration) zapcore.Field {
+			return zap.Int64("grpc.time_ns", duration.Nanoseconds())
+		}),
+	}
 
-	// Add the unary interceptor (is basically a middleware) to the gRPC server options
-	ChainUnary := grpc_middleware.ChainUnaryServer(grpc_auth.UnaryServerInterceptor(authenticate))
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	err := view.Register(ocgrpc.DefaultServerViews...)
+	if err != nil {
+		return nil, err
+	}
 
-	// Add the stream interceptor (is basically a middleware) to the gRPC server options
-	opts = append(opts, grpc.StreamInterceptor(Chain), grpc.UnaryInterceptor(ChainUnary))
+	// ------------ Initialize the authentication interceptor ------------
+
+	// Add stream interceptor with chained middleware
+	opts = append(opts, grpc.StreamInterceptor(
+		grpc_middleware.ChainStreamServer(
+			grpc_ctxtags.StreamServerInterceptor(),
+			grpc_zap.StreamServerInterceptor(logger, zapOpts...),
+			grpc_auth.StreamServerInterceptor(authenticate),
+		),
+	))
+
+	// Add unary interceptor with chained middleware
+	opts = append(opts, grpc.UnaryInterceptor(
+		grpc_middleware.ChainUnaryServer(
+			grpc_ctxtags.UnaryServerInterceptor(),
+			grpc_zap.UnaryServerInterceptor(logger, zapOpts...),
+			grpc_auth.UnaryServerInterceptor(authenticate),
+		),
+	))
+
+	// Add stats handler for OpenCensus telemetry
+	opts = append(opts, grpc.StatsHandler(&ocgrpc.ServerHandler{}))
 
 	gsrv := grpc.NewServer(opts...)
 	srv, err := newgrpcServer(config)
@@ -75,12 +111,11 @@ func NewGRPCServer(config *Config, opts ...grpc.ServerOption) (*grpc.Server, err
 	return gsrv, nil
 }
 
-
 func (s *grpcServer) Produce(ctx context.Context, req *api.ProduceRequest) (*api.ProduceResponse, error) {
 	if err := s.Authorizer.Authorize(subject(ctx), objectWildcard, produceAction); err != nil {
 		return nil, err
 	}
-	
+
 	offset, err := s.CommitLog.Append(req.Record)
 	if err != nil {
 		return nil, err
@@ -153,13 +188,13 @@ func authenticate(ctx context.Context) (context.Context, error) {
 		return ctx, status.New(codes.Unauthenticated, "no transport security being used").Err()
 	}
 
-	tlsInfo := p.AuthInfo.(credentials.TLSInfo) // Get the TLS information from the AuthInfo
+	tlsInfo := p.AuthInfo.(credentials.TLSInfo)                      // Get the TLS information from the AuthInfo
 	subject := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName // Extract the Common Name from the verified certificate
-	ctx = context.WithValue(ctx, subjectContextKey{}, subject) // Store the subject in the context
+	ctx = context.WithValue(ctx, subjectContextKey{}, subject)       // Store the subject in the context
 
 	return ctx, nil
 }
 
-func subject(ctx context.Context) (string) {
+func subject(ctx context.Context) string {
 	return ctx.Value(subjectContextKey{}).(string)
 }
