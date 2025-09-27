@@ -1,8 +1,8 @@
-# SecureYourServices Module Explanation
+# SecurityAndObservability Module Explanation
 
 ## Overview
 
-The `SecureYourServices` module is a **comprehensive security framework** within the Event Streaming System project that handles **TLS certificate management, authorization, and access control**. This module demonstrates how to properly secure distributed services through certificate-based authentication, encryption, and policy-based authorization using industry-standard tools and practices.
+The `SecurityAndObservability` module is a **comprehensive security framework** within the Event Streaming System project that handles **TLS certificate management, authorization, and access control**. This module demonstrates how to properly secure distributed services through certificate-based authentication, encryption, and policy-based authorization using industry-standard tools and practices.
 
 ## Purpose
 
@@ -16,7 +16,7 @@ This module teaches and implements **enterprise-grade security for distributed s
 ## Module Structure
 
 ```
-SecureYourServices/
+SecurityAndObservability/
 ├── Makefile                    # Build automation and certificate generation
 ├── go.mod                      # Go module dependencies  
 ├── go.sum                      # Dependency checksums
@@ -295,7 +295,7 @@ make test
 
 1. **Initialize the module**:
    ```bash
-   cd SecureYourServices
+   cd SecurityAndObservability
    make init
    make gencert
    ```
@@ -305,8 +305,8 @@ make test
    package main
    
    import (
-       "github.com/your-org/event-streaming-system/SecureYourServices/pkg/auth"
-       "github.com/your-org/event-streaming-system/SecureYourServices/pkg/config"
+       "github.com/your-org/event-streaming-system/SecurityAndObservability/pkg/auth"
+       "github.com/your-org/event-streaming-system/SecurityAndObservability/pkg/config"
    )
    
    func main() {

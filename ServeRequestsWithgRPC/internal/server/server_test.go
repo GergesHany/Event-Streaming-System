@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"flag"
 	"net"
 	"os"
+	"time"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,9 +18,26 @@ import (
 	api "github.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1"
 	"github.com/GergesHany/Event-Streaming-System/WriteALogPackage/log"
 
-	auth "github.com/GergesHany/Event-Streaming-System/SecureYourServices/pkg/auth"
-	SecureConfig "github.com/GergesHany/Event-Streaming-System/SecureYourServices/pkg/config"
+	auth "github.com/GergesHany/Event-Streaming-System/SecurityAndObservability/pkg/auth"
+	SecureConfig "github.com/GergesHany/Event-Streaming-System/SecurityAndObservability/pkg/config"
+
+	"go.opencensus.io/examples/exporter"
+	"go.uber.org/zap"
 )
+
+var debug = flag.Bool("debug", false, "Enable observability for debugging.")
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if *debug {
+		logger, err := zap.NewDevelopment()
+		if err != nil {
+			panic(err)
+		}
+		zap.ReplaceGlobals(logger)
+	}
+	os.Exit(m.Run())
+}
 
 func TestServer(t *testing.T) {
 	for scenario, fn := range map[string]func(t *testing.T, rootClient api.LogClient, nobodyClient api.LogClient, config *Config){
@@ -41,6 +60,7 @@ func setupTest(t *testing.T, fn func(*Config)) (rootClient api.LogClient, nobody
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
+	// Helper function to create a client with given certificate and key files
 	newClient := func(crtPath, keyPath string) (*grpc.ClientConn, api.LogClient, []grpc.DialOption) {
 		tlsConfig, err := SecureConfig.SetupTLSConfig(SecureConfig.TLSConfig{
 			CertFile: crtPath,
@@ -57,12 +77,14 @@ func setupTest(t *testing.T, fn func(*Config)) (rootClient api.LogClient, nobody
 		return conn, client, opts
 	}
 
+	// Create clients for "root" and "nobody" users
 	var rootConn *grpc.ClientConn
 	rootConn, rootClient, _ = newClient(SecureConfig.RootClientCertFile, SecureConfig.RootClientKeyFile)
 
 	var nobodyConn *grpc.ClientConn
 	nobodyConn, nobodyClient, _ = newClient(SecureConfig.NobodyClientCertFile, SecureConfig.NobodyClientKeyFile)
 
+	// Set up the server TLS configuration
 	serverTLSConfig, err := SecureConfig.SetupTLSConfig(SecureConfig.TLSConfig{
 		CertFile:      SecureConfig.ServerCertFile,
 		KeyFile:       SecureConfig.ServerKeyFile,
@@ -80,6 +102,27 @@ func setupTest(t *testing.T, fn func(*Config)) (rootClient api.LogClient, nobody
 	clog, err := log.NewLog(dir, log.Config{})
 	require.NoError(t, err)
 	a := auth.New(SecureConfig.ACLModelFile, SecureConfig.ACLPolicyFile)
+
+	// Set up telemetry exporter to log traces and metrics to files for debugging
+	var telemetryExporter *exporter.LogExporter
+	if *debug {
+		metricsLogFile, err := os.CreateTemp("", "metrics-*.log")
+		require.NoError(t, err)
+		t.Logf("metrics log file: %s", metricsLogFile.Name())
+
+		tracesLogFile, err := os.CreateTemp("", "traces-*.log")
+		require.NoError(t, err)
+		t.Logf("traces log file: %s", tracesLogFile.Name())
+
+		telemetryExporter, err = exporter.NewLogExporter(exporter.Options{
+			MetricsLogFile:    metricsLogFile.Name(),
+			TracesLogFile:     tracesLogFile.Name(),
+			ReportingInterval: time.Second,
+		})
+		require.NoError(t, err)
+		err = telemetryExporter.Start()
+		require.NoError(t, err)
+	}
 
 	// Create an adapter to convert between Record types
 	adapter := NewLogAdapter(clog)
@@ -104,6 +147,16 @@ func setupTest(t *testing.T, fn func(*Config)) (rootClient api.LogClient, nobody
 		rootConn.Close()
 		nobodyConn.Close()
 		l.Close()
+
+		/*
+		  * We sleep for 1.5 seconds to give the telemetry exporter enough time to flush its data to disk. 
+		  * Then we stop and close the exporter.
+		*/
+		if telemetryExporter != nil {
+			time.Sleep(1500 * time.Millisecond)
+			telemetryExporter.Stop()
+			telemetryExporter.Close()
+		}
 	}
 }
 
