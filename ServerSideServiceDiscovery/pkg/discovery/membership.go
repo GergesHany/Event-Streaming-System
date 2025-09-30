@@ -49,7 +49,7 @@ func (m *Membership) setupSerf() (err error) {
 		return err
 	}
 
-    // Initialize Serf configuration
+	// Initialize Serf configuration
 	config := serf.DefaultConfig()
 	config.Init()
 
