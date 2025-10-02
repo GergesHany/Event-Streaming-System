@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"context"
+
 	api "github.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -17,8 +18,8 @@ type Replicator struct {
 
 	mu      sync.Mutex
 	servers map[string]chan struct{} // Map of server addresses to their leave channels
-	closed  bool 				 // Indicates if the replicator is closed
-	close   chan struct{} 		 // Channel to signal closure
+	closed  bool                     // Indicates if the replicator is closed
+	close   chan struct{}            // Channel to signal closure
 }
 
 func (r *Replicator) Join(name, addr string) error {
@@ -42,7 +43,7 @@ func (r *Replicator) Join(name, addr string) error {
 }
 
 func (r *Replicator) replicate(addr string, leave chan struct{}) {
-	cc, err := grpc.Dial(addr, r.DialOptions...)
+	cc, err := grpc.NewClient(addr, r.DialOptions...)
 	if err != nil {
 		r.logError(err, "failed to dial", addr)
 		return
@@ -65,6 +66,7 @@ func (r *Replicator) replicate(addr string, leave chan struct{}) {
 			recv, err := stream.Recv()
 			if err != nil {
 				r.logError(err, "failed to receive from stream", addr)
+				return
 			}
 			records <- recv.Record
 		}
@@ -81,6 +83,7 @@ func (r *Replicator) replicate(addr string, leave chan struct{}) {
 			_, err = r.LocalServer.Produce(ctx, &api.ProduceRequest{Record: record})
 			if err != nil {
 				r.logError(err, "failed to produce", addr)
+				return
 			}
 		}
 	}
@@ -110,7 +113,7 @@ func (r *Replicator) init() {
 	if r.servers == nil {
 		r.servers = make(map[string]chan struct{})
 	}
-	
+
 	if r.close == nil {
 		r.close = make(chan struct{})
 	}

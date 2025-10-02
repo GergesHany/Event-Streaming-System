@@ -27,8 +27,7 @@ var workspaceRoot string // holds the workspace root path
 
 func loadWorkspaceRoot() string {
 	once.Do(func() {
-		cwd, _ := os.Getwd()
-		godotenv.Load(filepath.Join(cwd, ".env"))
+		godotenv.Load("../../../.env")
 		workspaceRoot = os.Getenv("WORKSPACE_ROOT")
 	})
 	return workspaceRoot
