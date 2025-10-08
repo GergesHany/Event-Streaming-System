@@ -24,7 +24,7 @@ type Membership struct {
 	handler Handler
 	serf    *serf.Serf      // Serf instance (manages cluster membership)
 	events  chan serf.Event // Channel to receive Serf events
-	logger  *zap.Logger
+	Logger  *zap.Logger
 }
 
 // New creates a new Membership instance and starts the Serf agent.
@@ -32,7 +32,7 @@ func New(handler Handler, config Config) (*Membership, error) {
 	c := &Membership{
 		Config:  config,
 		handler: handler,
-		logger:  zap.L().Named("membership"),
+		Logger:  zap.L().Named("membership"),
 	}
 
 	if err := c.setupSerf(); err != nil {
@@ -128,5 +128,5 @@ func (m *Membership) Leave() error {
 }
 
 func (m *Membership) logError(err error, msg string, member serf.Member) {
-	m.logger.Error(msg, zap.Error(err), zap.String("name", member.Name), zap.String("rpc_addr", member.Tags["rpc_addr"]))
+	m.Logger.Error(msg, zap.Error(err), zap.String("name", member.Name), zap.String("rpc_addr", member.Tags["rpc_addr"]))
 }

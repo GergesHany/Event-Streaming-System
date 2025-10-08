@@ -94,10 +94,10 @@ func testReadAtDebug(t *testing.T, s *store) {
 		fmt.Printf("  - Starting offset: %d\n", off)
 
 		// Read length prefix
-		b := make([]byte, lenWidth)
+		b := make([]byte, LenWidth)
 		n, err := s.ReadAt(b, off)
 		require.NoError(t, err)
-		require.Equal(t, lenWidth, n)
+		require.Equal(t, LenWidth, n)
 
 		size := enc.Uint64(b)
 		fmt.Printf("  - Length prefix read: %d bytes\n", size)
