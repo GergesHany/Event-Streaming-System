@@ -14,7 +14,7 @@ var (
 
 const (
 	// Each record is written to the segment file with an 8-byte length prefix
-	lenWidth = 8
+	LenWidth = 8
 )
 
 type store struct {
@@ -63,7 +63,7 @@ func (s *store) Append(p []byte) (n, pos uint64, err error) {
 		return 0, 0, err
 	}
 
-	w += lenWidth       // Add the length prefix size
+	w += LenWidth       // Add the length prefix size
 	s.size += uint64(w) // Update total size
 	return uint64(w), pos, nil
 }
@@ -77,13 +77,13 @@ func (s *store) Read(pos uint64) ([]byte, error) {
 		return nil, err
 	}
 
-	size := make([]byte, lenWidth)
+	size := make([]byte, LenWidth)
 	if _, err := s.File.ReadAt(size, int64(pos)); err != nil {
 		return nil, err
 	}
 
 	b := make([]byte, enc.Uint64(size))
-	if _, err := s.File.ReadAt(b, int64(pos+lenWidth)); err != nil {
+	if _, err := s.File.ReadAt(b, int64(pos+LenWidth)); err != nil {
 		return nil, err
 	}
 	return b, nil

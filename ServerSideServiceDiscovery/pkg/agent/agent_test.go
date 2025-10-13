@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/travisjeffery/go-dynaport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 func TestAgent(t *testing.T) {
@@ -45,7 +45,7 @@ func TestAgent(t *testing.T) {
 		bindAddr := fmt.Sprintf("%s:%d", "127.0.0.1", ports[0])
 		rpcPort := ports[1]
 
-		dataDir, err := ioutil.TempDir("", "agent-test-log")
+		dataDir, err := os.MkdirTemp("", "agent-test-log")
 		require.NoError(t, err)
 
 		var startJoinAddrs []string
@@ -58,6 +58,7 @@ func TestAgent(t *testing.T) {
 
 		agent, err := agent.New(agent.Config{
 			NodeName:        fmt.Sprintf("%d", i),
+			Bootstrap:       i == 0,
 			StartJoinAddrs:  startJoinAddrs,
 			BindAddr:        bindAddr,
 			RPCPort:         rpcPort,
@@ -74,8 +75,7 @@ func TestAgent(t *testing.T) {
 
 	defer func() {
 		for _, agent := range agents {
-			err := agent.Shutdown()
-			require.NoError(t, err)
+			_ = agent.Shutdown()
 			require.NoError(t, os.RemoveAll(agent.Config.DataDir))
 		}
 	}()
@@ -98,6 +98,15 @@ func TestAgent(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, consumeResponse.Record.Value, []byte("foo"))
+
+	consumeResponse, err = leaderClient.Consume(context.Background(), &api.ConsumeRequest{Offset: produceResponse.Offset + 1})
+
+	require.Nil(t, consumeResponse)
+	require.Error(t, err)
+
+	got := status.Code(err)
+	want := status.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
+	require.Equal(t, got, want)
 }
 
 func client(t *testing.T, agent *agent.Agent, tlsConfig *tls.Config) api.LogClient {

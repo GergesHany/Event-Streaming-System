@@ -24,7 +24,7 @@ type Membership struct {
 	handler Handler
 	serf    *serf.Serf      // Serf instance (manages cluster membership)
 	events  chan serf.Event // Channel to receive Serf events
-	logger  *zap.Logger
+	Logger  *zap.Logger
 }
 
 // New creates a new Membership instance and starts the Serf agent.
@@ -32,7 +32,7 @@ func New(handler Handler, config Config) (*Membership, error) {
 	c := &Membership{
 		Config:  config,
 		handler: handler,
-		logger:  zap.L().Named("membership"),
+		Logger:  zap.L().Named("membership"),
 	}
 
 	if err := c.setupSerf(); err != nil {
@@ -44,6 +44,7 @@ func New(handler Handler, config Config) (*Membership, error) {
 
 // setupSerf initializes and starts the Serf agent.
 func (m *Membership) setupSerf() (err error) {
+	// Resolve the bind address (returns an address of TCP end point.)
 	addr, err := net.ResolveTCPAddr("tcp", m.BindAddr)
 	if err != nil {
 		return err
@@ -53,14 +54,17 @@ func (m *Membership) setupSerf() (err error) {
 	config := serf.DefaultConfig()
 	config.Init()
 
-	config.Tags = m.Tags
+	config.MemberlistConfig.BindAddr = addr.IP.String()
+	config.MemberlistConfig.BindPort = addr.Port
+
 	m.events = make(chan serf.Event)
 	config.EventCh = m.events
+
+	config.Tags = m.Tags
 	config.NodeName = m.Config.NodeName
-	config.MemberlistConfig.BindPort = addr.Port
-	config.MemberlistConfig.BindAddr = addr.IP.String()
 
 	m.serf, err = serf.Create(config)
+
 	if err != nil {
 		return err
 	}
@@ -128,5 +132,5 @@ func (m *Membership) Leave() error {
 }
 
 func (m *Membership) logError(err error, msg string, member serf.Member) {
-	m.logger.Error(msg, zap.Error(err), zap.String("name", member.Name), zap.String("rpc_addr", member.Tags["rpc_addr"]))
+	m.Logger.Error(msg, zap.Error(err), zap.String("name", member.Name), zap.String("rpc_addr", member.Tags["rpc_addr"]))
 }

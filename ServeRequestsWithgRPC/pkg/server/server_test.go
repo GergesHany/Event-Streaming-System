@@ -5,8 +5,8 @@ import (
 	"flag"
 	"net"
 	"os"
-	"time"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -149,9 +149,9 @@ func setupTest(t *testing.T, fn func(*Config)) (rootClient api.LogClient, nobody
 		l.Close()
 
 		/*
-		  * We sleep for 1.5 seconds to give the telemetry exporter enough time to flush its data to disk. 
-		  * Then we stop and close the exporter.
-		*/
+		 * We sleep for 1.5 seconds to give the telemetry exporter enough time to flush its data to disk.
+		 * Then we stop and close the exporter.
+		 */
 		if telemetryExporter != nil {
 			time.Sleep(1500 * time.Millisecond)
 			telemetryExporter.Stop()

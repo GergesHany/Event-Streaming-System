@@ -13,11 +13,11 @@ type Authorizer struct {
 }
 
 func New(model, policy string) *Authorizer {
-   enforcer := casbin.NewEnforcer(model, policy)
-   return &Authorizer{enforcer: enforcer}
+	enforcer := casbin.NewEnforcer(model, policy)
+	return &Authorizer{enforcer: enforcer}
 }
 
-func (a *Authorizer) Authorize(subject, object, action string) (error) {
+func (a *Authorizer) Authorize(subject, object, action string) error {
 	// Check permission using Casbin enforcer
 	if !a.enforcer.Enforce(subject, object, action) {
 		msg := fmt.Sprintf("%s not permitted to %s to %s", subject, action, object)
