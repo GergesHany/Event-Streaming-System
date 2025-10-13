@@ -16,5 +16,8 @@ require (
 	github.com/hashicorp/raft-boltdb v0.0.0-20250926130943-f41fa5f23d89 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/soheilhy/cmux v0.1.5 // indirect
+	golang.org/x/net v0.16.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 )

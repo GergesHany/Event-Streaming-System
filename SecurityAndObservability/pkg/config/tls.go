@@ -12,7 +12,7 @@ type TLSConfig struct {
 	KeyFile       string // Client or Server Key
 	CAFile        string // Certificate Authority
 	ServerAddress string // Server address
-	Server        bool // Is this config for a server?
+	Server        bool   // Is this config for a server?
 }
 
 func SetupTLSConfig(cfg TLSConfig) (*tls.Config, error) {

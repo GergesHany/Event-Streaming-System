@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"io"
@@ -104,7 +105,7 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 
 	// 3- A stable store where Raft stores the cluster’s configuration—the servers in the cluster, their addresses, and so on;
 
-	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(dataDir, "raft", "log"))
+	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(dataDir, "raft", "stable"))
 	if err != nil {
 		return err
 	}
@@ -155,7 +156,7 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 	}
 
 	// CommitTimeout is a Raft configuration parameter that controls how long Raft will wait for a log entry to be committed before timing out.
-	if l.config.Raft.CommitTimeout != 0 {
+	if l.config.Raft.CommitTimeout > 0 {
 		config.CommitTimeout = l.config.Raft.CommitTimeout
 	}
 
@@ -172,13 +173,8 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 		return err
 	}
 
-	hasState, err := raft.HasExistingState(logStore, stableStore, snapshotStore)
-	if err != nil {
-		return err
-	}
-
 	// If there is no existing state, and we are supposed to bootstrap, then we need to bootstrap the cluster.
-	if l.config.Raft.Bootstrap && !hasState {
+	if l.config.Raft.Bootstrap {
 		config := raft.Configuration{
 			Servers: []raft.Server{
 				{
@@ -255,6 +251,10 @@ func (l *DistributedLog) Read(offset uint64) (*api.Record, error) {
 	// Convert the returned record to the correct type
 	record, err := l.log.Read(offset)
 	if err != nil {
+		// Check if it's an offset out of range error and convert to the proper type
+		if strings.Contains(err.Error(), "offset out of range") {
+			return nil, api.ErrOffsetOutOfRange{Offset: offset}
+		}
 		return nil, err
 	}
 	converted := &api.Record{
@@ -419,14 +419,16 @@ func (l *DistributedLog) Join(id, addr string) error {
 
 	for _, srv := range configFuture.Configuration().Servers {
 		if srv.ID == serverID || srv.Address == serverAddr {
-			// server already in the cluster, ignore
-			return nil
-		}
-
-		// remove any existing server with same ID or address
-		removeFuture := l.raft.RemoveServer(srv.ID, 0, 0)
-		if err := removeFuture.Error(); err != nil {
-			return err
+			// server has same ID or address, remove it first
+			if srv.ID == serverID && srv.Address == serverAddr {
+				// server already in the cluster with same ID and address, ignore
+				return nil
+			}
+			// remove any existing server with same ID or address
+			removeFuture := l.raft.RemoveServer(srv.ID, 0, 0)
+			if err := removeFuture.Error(); err != nil {
+				return err
+			}
 		}
 	}
 

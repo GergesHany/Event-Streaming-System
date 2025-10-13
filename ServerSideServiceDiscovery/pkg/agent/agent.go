@@ -6,23 +6,30 @@ import (
 	"net"
 	"sync"
 
+	DisLog "github.com/GergesHany/Event-Streaming-System/CoordinateWithConsensus/pkg/log"
 	"github.com/GergesHany/Event-Streaming-System/SecurityAndObservability/pkg/auth"
-	api "github.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1"
 	"github.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/pkg/server"
 	"github.com/GergesHany/Event-Streaming-System/ServerSideServiceDiscovery/pkg/discovery"
-	logRep "github.com/GergesHany/Event-Streaming-System/ServerSideServiceDiscovery/pkg/log"
 	"github.com/GergesHany/Event-Streaming-System/WriteALogPackage/log"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+
+	"github.com/soheilhy/cmux"
+
+	"bytes"
+	"github.com/hashicorp/raft"
+	"io"
+	"time"
 )
 
 type Agent struct {
 	Config
-	log        *log.Log
+
+	mux cmux.CMux // Connection multiplexer
+
+	log        *DisLog.DistributedLog
 	server     *grpc.Server
 	membership *discovery.Membership
-	replicator *logRep.Replicator
 
 	// Shutdown coordination
 	shutdown     bool
@@ -34,13 +41,18 @@ type Config struct {
 	ServerTLSConfig *tls.Config
 	PeerTLSConfig   *tls.Config
 
-	DataDir        string
-	BindAddr       string
-	RPCPort        int
+	DataDir  string
+	BindAddr string
+
+	RPCPort int
+
 	NodeName       string
 	StartJoinAddrs []string
-	ACLModelFile   string
-	ACLPolicyFile  string
+
+	ACLModelFile  string
+	ACLPolicyFile string
+
+	Bootstrap bool
 }
 
 func (c Config) RPCAddr() (string, error) {
@@ -58,7 +70,7 @@ func New(config Config) (*Agent, error) {
 	}
 
 	setup := []func() error{
-		a.setupLogger,
+		a.setupMux,
 		a.setupLog,
 		a.setupServer,
 		a.setupMembership,
@@ -71,32 +83,60 @@ func New(config Config) (*Agent, error) {
 		}
 	}
 
+	go a.serve()
 	return a, nil
 }
 
-func (a *Agent) setupLogger() error {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		return err
-	}
-	// Replace the global logger with the new logger
-	zap.ReplaceGlobals(logger)
-	return nil
-}
+// func (a *Agent) setupLogger() error {
+// 	logger, err := zap.NewDevelopment()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	// Replace the global logger with the new logger
+// 	zap.ReplaceGlobals(logger)
+// 	return nil
+// }
 
 func (a *Agent) setupLog() error {
+	raftLn := a.mux.Match(func(reader io.Reader) bool {
+		b := make([]byte, 1)
+		if _, err := reader.Read(b); err != nil {
+			return false
+		}
+		return bytes.Equal(b, []byte{byte(log.RaftRPC)})
+	})
+
+	logConfig := log.Config{}
+	logConfig.Raft.StreamLayer = log.NewStreamLayer(
+		raftLn,
+		a.Config.ServerTLSConfig,
+		a.Config.PeerTLSConfig,
+	)
+
+	logConfig.Raft.LocalID = raft.ServerID(a.Config.NodeName)
+	logConfig.Raft.Bootstrap = a.Config.Bootstrap
+
 	var err error
-	a.log, err = log.NewLog(a.Config.DataDir, log.Config{})
+	a.log, err = DisLog.NewDistributedLog(
+		a.Config.DataDir,
+		logConfig,
+	)
+
 	if err != nil {
 		return err
 	}
+
+	if a.Config.Bootstrap {
+		return a.log.WaitForLeader(3 * time.Second)
+	}
+
 	return err
 }
 
 func (a *Agent) setupServer() error {
 	authorizer := auth.New(a.Config.ACLModelFile, a.Config.ACLPolicyFile)
-	serverConfig := server.Config{
-		CommitLog:  server.NewLogAdapter(a.log),
+	serverConfig := &server.Config{
+		CommitLog:  a.log,
 		Authorizer: authorizer,
 	}
 
@@ -107,24 +147,17 @@ func (a *Agent) setupServer() error {
 	}
 
 	var err error
-	a.server, err = server.NewGRPCServer(&serverConfig, opts...)
+	a.server, err = server.NewGRPCServer(serverConfig, opts...)
 	if err != nil {
 		return err
 	}
 
-	rpcAddr, err := a.RPCAddr()
-	if err != nil {
-		return err
-	}
+	grpcLn := a.mux.Match(cmux.Any()) // Match all other connections for gRPC
 
-	ln, err := net.Listen("tcp", rpcAddr)
-	if err != nil {
-		return err
-	}
-
+	// Start the gRPC server in a separate goroutine
 	go func() {
-		if err := a.server.Serve(ln); err != nil {
-			_ = a.Shutdown()
+		if err := a.server.Serve(grpcLn); err != nil {
+			_ = a.Shutdown() // Shutdown on server error
 		}
 	}()
 
@@ -137,23 +170,7 @@ func (a *Agent) setupMembership() error {
 		return err
 	}
 
-	var opts []grpc.DialOption
-	if a.Config.PeerTLSConfig != nil {
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(a.Config.PeerTLSConfig)))
-	}
-
-	conn, err := grpc.Dial(rpcAddr, opts...)
-	if err != nil {
-		return err
-	}
-
-	client := api.NewLogClient(conn)
-	a.replicator = &logRep.Replicator{
-		DialOptions: opts,
-		LocalServer: client,
-	}
-
-	a.membership, err = discovery.New(a.replicator, discovery.Config{
+	a.membership, err = discovery.New(a.log, discovery.Config{
 		NodeName:       a.Config.NodeName,
 		BindAddr:       a.Config.BindAddr,
 		Tags:           map[string]string{"rpc_addr": rpcAddr},
@@ -178,7 +195,6 @@ func (a *Agent) Shutdown() error {
 	// Define shutdown functions to be called in order
 	shutdowns := []func() error{
 		a.membership.Leave,
-		a.replicator.Close,
 		func() error {
 			// Gracefully stop the gRPC server
 			a.server.GracefulStop()
@@ -193,5 +209,25 @@ func (a *Agent) Shutdown() error {
 		}
 	}
 
+	return nil
+}
+
+func (a *Agent) setupMux() error {
+	rpcAddr := fmt.Sprintf(":%d", a.Config.RPCPort)
+
+	ln, err := net.Listen("tcp", rpcAddr)
+	if err != nil {
+		return err
+	}
+
+	a.mux = cmux.New(ln)
+	return nil
+}
+
+func (a *Agent) serve() error {
+	if err := a.mux.Serve(); err != nil {
+		_ = a.Shutdown()
+		return err
+	}
 	return nil
 }
