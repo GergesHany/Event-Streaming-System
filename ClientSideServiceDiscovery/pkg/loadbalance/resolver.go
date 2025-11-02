@@ -22,7 +22,7 @@ type Resolver struct {
 	logger        *zap.Logger
 }
 
-const Name = "proglog"
+const Name = "StreamingSystem"
 
 var _ resolver.Builder = (*Resolver)(nil)
 
