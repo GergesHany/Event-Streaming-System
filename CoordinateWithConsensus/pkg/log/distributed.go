@@ -31,6 +31,12 @@ type DistributedLog struct {
 	raft   *raft.Raft
 }
 
+type Server struct {
+	ID       string
+	Address  string
+	IsLeader bool
+}
+
 type fsm struct {
 	log *Log
 }
@@ -465,4 +471,24 @@ func (l *DistributedLog) Close() error {
 		return err
 	}
 	return l.log.Close()
+}
+
+func (l *DistributedLog) GetServers() ([]*Server, error) {
+	configFuture := l.raft.GetConfiguration()
+	if err := configFuture.Error(); err != nil {
+		return nil, err
+	}
+
+	var servers []*Server
+	leaderAddr := l.raft.Leader()
+
+	for _, srv := range configFuture.Configuration().Servers {
+		servers = append(servers, &Server{
+			ID:       string(srv.ID),
+			Address:  string(srv.Address),
+			IsLeader: srv.Address == leaderAddr,
+		})
+	}
+
+	return servers, nil
 }
