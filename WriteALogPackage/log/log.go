@@ -10,8 +10,9 @@ import (
 	"strings"
 	"sync"
 
-	api "github.com/GergesHany/Event-Streaming-System/StructureDataWithProtobuf/api/v1"
 	"io"
+
+	api "github.com/GergesHany/Event-Streaming-System/StructureDataWithProtobuf/api/v1"
 )
 
 type Log struct {
@@ -157,6 +158,9 @@ func (l *Log) Reset() error {
 func (l *Log) LowestOffset() (uint64, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
+	if len(l.segments) == 0 {
+		return 0, nil
+	}
 	return l.segments[0].baseOffset, nil
 }
 
@@ -164,6 +168,9 @@ func (l *Log) LowestOffset() (uint64, error) {
 func (l *Log) HighestOffset() (uint64, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
+	if len(l.segments) == 0 {
+		return 0, nil
+	}
 	off := l.segments[len(l.segments)-1].nextOffset
 	if off == 0 {
 		return 0, nil

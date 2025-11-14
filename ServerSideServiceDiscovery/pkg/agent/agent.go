@@ -8,6 +8,7 @@ import (
 
 	DisLog "github.com/GergesHany/Event-Streaming-System/CoordinateWithConsensus/pkg/log"
 	"github.com/GergesHany/Event-Streaming-System/SecurityAndObservability/pkg/auth"
+	api "github.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/api/v1"
 	"github.com/GergesHany/Event-Streaming-System/ServeRequestsWithgRPC/pkg/server"
 	"github.com/GergesHany/Event-Streaming-System/ServerSideServiceDiscovery/pkg/discovery"
 	"github.com/GergesHany/Event-Streaming-System/WriteALogPackage/log"
@@ -17,9 +18,10 @@ import (
 	"github.com/soheilhy/cmux"
 
 	"bytes"
-	"github.com/hashicorp/raft"
 	"io"
 	"time"
+
+	"github.com/hashicorp/raft"
 )
 
 type Agent struct {
@@ -107,16 +109,23 @@ func (a *Agent) setupLog() error {
 	})
 
 	logConfig := log.Config{}
+	logConfig.Segment.MaxStoreBytes = 1024 * 1024 * 1024 // 1GB
+	logConfig.Segment.MaxIndexBytes = 1024 * 1024        // 1MB
 	logConfig.Raft.StreamLayer = log.NewStreamLayer(
 		raftLn,
 		a.Config.ServerTLSConfig,
 		a.Config.PeerTLSConfig,
 	)
 
+	rpcAddr, err := a.Config.RPCAddr()
+	if err != nil {
+		return err
+	}
+
+	logConfig.Raft.BindAddr = rpcAddr
 	logConfig.Raft.LocalID = raft.ServerID(a.Config.NodeName)
 	logConfig.Raft.Bootstrap = a.Config.Bootstrap
 
-	var err error
 	a.log, err = DisLog.NewDistributedLog(
 		a.Config.DataDir,
 		logConfig,
@@ -127,7 +136,7 @@ func (a *Agent) setupLog() error {
 	}
 
 	if a.Config.Bootstrap {
-		return a.log.WaitForLeader(3 * time.Second)
+		return a.log.WaitForLeader(10 * time.Second)
 	}
 
 	return err
@@ -138,6 +147,7 @@ func (a *Agent) setupServer() error {
 	serverConfig := &server.Config{
 		CommitLog:  a.log,
 		Authorizer: authorizer,
+		GetServers: a, // Agent implements GetServers interface
 	}
 
 	var opts []grpc.ServerOption
@@ -213,8 +223,9 @@ func (a *Agent) Shutdown() error {
 }
 
 func (a *Agent) setupMux() error {
-	rpcAddr := fmt.Sprintf(":%d", a.Config.RPCPort)
-
+	// Bind RPC server to all interfaces (0.0.0.0) to accept external connections
+	// Parse BindAddr to extract just the port if needed, but bind mux to 0.0.0.0
+	rpcAddr := fmt.Sprintf("0.0.0.0:%d", a.Config.RPCPort)
 	ln, err := net.Listen("tcp", rpcAddr)
 	if err != nil {
 		return err
@@ -222,6 +233,25 @@ func (a *Agent) setupMux() error {
 
 	a.mux = cmux.New(ln)
 	return nil
+}
+
+// GetServers implements the server.GetServerer interface by adapting
+// the distributed log's GetServers to the gRPC API's Server type
+func (a *Agent) GetServers() ([]*api.Server, error) {
+	servers, err := a.log.GetServers()
+	if err != nil {
+		return nil, err
+	}
+	// Convert from distributed log Server type to API Server type
+	apiServers := make([]*api.Server, len(servers))
+	for i, srv := range servers {
+		apiServers[i] = &api.Server{
+			Id:       srv.ID,
+			RpcAddr:  srv.Address,
+			IsLeader: srv.IsLeader,
+		}
+	}
+	return apiServers, nil
 }
 
 func (a *Agent) serve() error {
