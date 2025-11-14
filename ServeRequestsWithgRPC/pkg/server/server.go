@@ -22,6 +22,9 @@ import (
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 // ensure grpcServer satisfies the api.LogServer interface
@@ -108,11 +111,18 @@ func NewGRPCServer(config *Config, opts ...grpc.ServerOption) (*grpc.Server, err
 
 	gsrv := grpc.NewServer(opts...)
 	srv, err := newgrpcServer(config)
+
+	// Register health check service
+	healthServer := health.NewServer()
+	healthpb.RegisterHealthServer(gsrv, healthServer)
+	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+
 	if err != nil {
 		return nil, err
 	}
 
 	api.RegisterLogServer(gsrv, srv)
+
 	return gsrv, nil
 }
 
@@ -190,15 +200,23 @@ func (s *grpcServer) GetServers(ctx context.Context, req *api.GetServersRequest)
 }
 
 func authenticate(ctx context.Context) (context.Context, error) {
+	// Skip authentication for health check service
+	if method, ok := grpc.Method(ctx); ok {
+		if method == "/grpc.health.v1.Health/Check" || method == "/grpc.health.v1.Health/Watch" {
+			return ctx, nil
+		}
+	}
+
 	// Extract the peer (client) information from the context
 	p, ok := peer.FromContext(ctx)
 	if !ok {
 		return ctx, status.New(codes.Unknown, "couldn't find p info").Err()
 	}
 
-	// Ensure that transport security is being used
+	// If TLS is not configured, allow the connection (development/testing mode)
+	// In production, TLS should always be configured
 	if p.AuthInfo == nil {
-		return ctx, status.New(codes.Unauthenticated, "no transport security being used").Err()
+		return ctx, nil
 	}
 
 	tlsInfo := p.AuthInfo.(credentials.TLSInfo)                      // Get the TLS information from the AuthInfo

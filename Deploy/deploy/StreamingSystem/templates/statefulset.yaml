@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "StreamingSystem.fullname" . | lower }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{ include "StreamingSystem.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{ include "StreamingSystem.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "StreamingSystem.fullname" . | lower }}
+  replicas: {{ .Values.replicas }}
+  template:
+    metadata:
+      name: {{ include "StreamingSystem.fullname" . | lower }}
+      labels: {{ include "StreamingSystem.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+      - name: {{ include "StreamingSystem.fullname" . }}-config-init
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - |-
+            ID=$(echo $HOSTNAME | rev | cut -d- -f1 | rev)
+            CONFIG_FILE=/var/run/StreamingSystem/config.yaml
+
+            echo "data-dir: /var/run/StreamingSystem/data" > $CONFIG_FILE
+            echo "rpc-port: {{.Values.rpcPort}}" >> $CONFIG_FILE
+            echo "bind-addr: \"$HOSTNAME.streaming-system-streamingsystem.{{.Release.Namespace}}.svc.cluster.local:{{.Values.serfPort}}\"" >> $CONFIG_FILE
+
+            if [ "$ID" != "0" ]; then
+              echo "start-join-addrs: \"streaming-system-streamingsystem-0.streaming-system-streamingsystem.{{.Release.Namespace}}.svc.cluster.local:{{.Values.serfPort}}\"" >> $CONFIG_FILE
+              echo "bootstrap: false" >> $CONFIG_FILE
+            else
+              echo "bootstrap: true" >> $CONFIG_FILE
+            fi
+        volumeMounts:
+          - name: datadir
+            mountPath: /var/run/StreamingSystem
+      containers:
+      - name: {{ include "StreamingSystem.fullname" . | lower }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.rpcPort }}
+          name: rpc
+        - containerPort: {{ .Values.serfPort }}
+          name: serf
+        args:
+          - --config-file=/var/run/StreamingSystem/config.yaml
+        readinessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:{{ .Values.rpcPort }}"]
+          initialDelaySeconds: 10
+        livenessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:{{ .Values.rpcPort }}"]
+          initialDelaySeconds: 20
+        volumeMounts:
+        - name: datadir
+          mountPath: /var/run/StreamingSystem
+
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.storage }}

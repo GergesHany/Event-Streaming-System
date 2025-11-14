@@ -81,6 +81,7 @@ func (s *StreamLayer) Addr() net.Addr {
 type Config struct {
 	Raft struct {
 		raft.Config
+		BindAddr    string
 		StreamLayer *StreamLayer
 		Bootstrap   bool // that means this node is the first node in the cluster.
 	}

@@ -95,23 +95,27 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 	// 1- A finite-state machine that applies the commands you give Raft
 
 	fsm := &fsm{log: l.log}
-	logDir := filepath.Join(dataDir, "raft", "log")
-	if err := os.MkdirAll(logDir, 0755); err != nil {
+
+	// 2- A log store where Raft stores those commands;
+	// Use BoltDB for Raft's log store instead of custom implementation
+	// This is more reliable and avoids EOF errors during commit
+
+	// Ensure the raft directory exists
+	raftDir := filepath.Join(dataDir, "raft")
+	if err := os.MkdirAll(raftDir, 0755); err != nil {
 		return err
 	}
 
-	// 2- A log store where Raft stores those commands;
-
-	logConfig := l.config
-	logConfig.Segment.InitialOffset = 1
-	logStore, err := newLogStore(logDir, logConfig)
+	// Use separate BoltDB instances for log store and stable store
+	// to avoid transaction conflicts ("Rollback failed: tx closed")
+	logStore, err := raftboltdb.NewBoltStore(filepath.Join(raftDir, "raft-log.db"))
 	if err != nil {
 		return err
 	}
 
-	// 3- A stable store where Raft stores the cluster’s configuration—the servers in the cluster, their addresses, and so on;
-
-	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(dataDir, "raft", "stable"))
+	// 3- A stable store where Raft stores the cluster's configuration
+	// Use a separate BoltDB file for stable store
+	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(raftDir, "raft-stable.db"))
 	if err != nil {
 		return err
 	}
@@ -120,7 +124,7 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 
 	retain := 1
 	snapshotStore, err := raft.NewFileSnapshotStore(
-		filepath.Join(dataDir, "raft"),
+		raftDir,
 		retain,
 		os.Stderr,
 	)
@@ -181,18 +185,30 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 
 	// If there is no existing state, and we are supposed to bootstrap, then we need to bootstrap the cluster.
 	if l.config.Raft.Bootstrap {
-		config := raft.Configuration{
-			Servers: []raft.Server{
-				{
-					ID:      config.LocalID,
-					Address: transport.LocalAddr(),
-				},
-			},
+		// Check if Raft has existing state before attempting bootstrap
+		hasState, err := raft.HasExistingState(logStore, stableStore, snapshotStore)
+		if err != nil {
+			return err
 		}
-		err = l.raft.BootstrapCluster(config).Error()
+
+		// Only bootstrap if there's no existing state
+		if !hasState {
+			config := raft.Configuration{
+				Servers: []raft.Server{
+					{
+						ID:      config.LocalID,
+						Address: raft.ServerAddress(l.config.Raft.BindAddr),
+					},
+				},
+			}
+			err = l.raft.BootstrapCluster(config).Error()
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	return err
+	return nil
 }
 
 func newLogStore(dir string, c Config) (*logStore, error) {
@@ -276,6 +292,12 @@ var _ raft.FSM = (*fsm)(nil) // Finite-State Machine
 
 func (l *fsm) Apply(record *raft.Log) interface{} {
 	buf := record.Data
+
+	// Handle Raft no-op entries (typically sent when a leader is elected)
+	if record.Type == raft.LogNoop || len(buf) == 0 {
+		return nil
+	}
+
 	reqType := RequestType(buf[0])
 
 	switch reqType {
@@ -367,17 +389,43 @@ func (s *snapshot) Release() {}
 var _ raft.LogStore = (*logStore)(nil)
 
 func (l *logStore) FirstIndex() (uint64, error) {
-	return l.LowestOffset()
+	// First check if the log is empty
+	lastOffset, err := l.HighestOffset()
+	if err != nil {
+		return 0, err
+	}
+	// If highest offset is 0, log is empty, return 0
+	if lastOffset == 0 {
+		return 0, nil
+	}
+	// Log has entries, return the lowest offset
+	offset, err := l.LowestOffset()
+	if err != nil {
+		return 0, err
+	}
+	return offset, nil
 }
 
 func (l *logStore) LastIndex() (uint64, error) {
 	off, err := l.HighestOffset()
+	if err != nil {
+		return 0, err
+	}
+	// Raft expects 0 for empty log
+	if off == 0 {
+		return 0, nil
+	}
 	return off, err
 }
 
 func (l *logStore) GetLog(index uint64, out *raft.Log) error {
 	in, err := l.Read(index)
 	if err != nil {
+		// Convert "offset out of range" errors to raft.ErrLogNotFound
+		// This is what Raft expects when a log entry doesn't exist
+		if strings.Contains(err.Error(), "offset out of range") {
+			return raft.ErrLogNotFound
+		}
 		return err
 	}
 
