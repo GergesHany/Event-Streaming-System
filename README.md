@@ -1,2 +1,1 @@
-# Event-Streaming-System
-Distributed system (an event-streaming system)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/GergesHany/Event-Streaming-System)
