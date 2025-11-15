@@ -10,12 +10,14 @@
 
 The Event-Streaming-System is a distributed event streaming platform that provides strong consistency guarantees via Raft consensus and dynamic service discovery via Serf. This document introduces the system's purpose, architecture, and main components. For detailed information on specific subsystems, see:
 
-- **Agent orchestration and coordination**: [Agent Orchestration](#agent-orchestration)
-- **Distributed consensus implementation**: [Distributed Consensus with Raft](#distributed-consensus-with-raft)
-- **Service discovery with Serf**: [Service Discovery with Serf](#service-discovery-with-serf)
-- **Storage layer architecture**: [Storage Layer Architecture](#storage-layer-architecture)
-- **Deployment procedures**: [Deployment](#deployment)
-- **API specifications**: [API Reference](#api-reference)
+- **Agent orchestration and coordination**: [Agent Initialization Sequence](#agent-initialization-sequence)
+- **Core components mapping**: [Core Components Mapped to Code](#core-components-mapped-to-code)
+- **Connection multiplexing**: [Connection Multiplexing Architecture](#connection-multiplexing-architecture)
+- **Distributed consensus implementation**: [DistributedLog and Raft Integration](#distributedlog-and-raft-integration)
+- **FSM state machine**: [FSM State Machine Implementation](#fsm-state-machine-implementation)
+- **Service discovery with Serf**: [Cluster Membership and Discovery](#cluster-membership-and-discovery)
+- **Operational flows**: [Core Operational Flow](#core-operational-flow)
+- **Getting started guide**: [Getting Started](#getting-started)
 
 **Sources:**
 - `ServerSideServiceDiscovery/pkg/agent/agent.go`
