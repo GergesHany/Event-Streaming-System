@@ -19,7 +19,6 @@ import (
 
 	"bytes"
 	"io"
-	"time"
 
 	"github.com/hashicorp/raft"
 )
@@ -29,9 +28,9 @@ type Agent struct {
 
 	mux cmux.CMux // Connection multiplexer
 
-	log        *DisLog.DistributedLog
+	log        *DisLog.DistributedLog // Distributed log using Raft consensus
 	server     *grpc.Server
-	membership *discovery.Membership
+	membership *discovery.Membership // Service discovery membership
 
 	// Shutdown coordination
 	shutdown     bool
@@ -135,10 +134,8 @@ func (a *Agent) setupLog() error {
 		return err
 	}
 
-	if a.Config.Bootstrap {
-		return a.log.WaitForLeader(10 * time.Second)
-	}
-
+	// Don't wait for leader during setup - it will be elected asynchronously
+	// after all nodes have joined via Serf membership
 	return err
 }
 
