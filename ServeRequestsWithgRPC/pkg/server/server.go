@@ -227,5 +227,9 @@ func authenticate(ctx context.Context) (context.Context, error) {
 }
 
 func subject(ctx context.Context) string {
-	return ctx.Value(subjectContextKey{}).(string)
+	sub := ctx.Value(subjectContextKey{})
+	if sub == nil {
+		return ""
+	}
+	return sub.(string)
 }

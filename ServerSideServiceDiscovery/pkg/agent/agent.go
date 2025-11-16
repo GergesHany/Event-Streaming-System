@@ -19,7 +19,6 @@ import (
 
 	"bytes"
 	"io"
-	"time"
 
 	"github.com/hashicorp/raft"
 )
@@ -135,10 +134,8 @@ func (a *Agent) setupLog() error {
 		return err
 	}
 
-	if a.Config.Bootstrap {
-		return a.log.WaitForLeader(10 * time.Second)
-	}
-
+	// Don't wait for leader during setup - it will be elected asynchronously
+	// after all nodes have joined via Serf membership
 	return err
 }
 

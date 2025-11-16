@@ -1,8 +1,7 @@
-# Default values for proglog.
 image:
   repository: github.com/gergeshany/event-streaming-system
   tag: 0.0.1
-  pullPolicy: IfNotPresent
+  pullPolicy: Never 
 serfPort: 8401
 rpcPort: 8400
 replicas: 3
