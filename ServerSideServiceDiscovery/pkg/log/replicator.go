@@ -1,5 +1,12 @@
 package log
 
+// NOTE: This Replicator implementation is legacy code and is NOT currently used in production.
+// It has been replaced by Raft consensus protocol (see CoordinateWithConsensus/pkg/log/distributed.go)
+// which provides stronger consistency guarantees, automatic leader election, and built-in fault tolerance.
+//
+// The current system uses DistributedLog with Raft for all replication needs.
+// This code is kept for reference but may be removed in future refactoring.
+
 import (
 	"sync"
 

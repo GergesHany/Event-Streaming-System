@@ -25,6 +25,7 @@ var (
 	enc = binary.BigEndian
 )
 
+// DistributedLog is a log that is distributed across multiple nodes using the Raft consensus algorithm.
 type DistributedLog struct {
 	config Config
 	log    *Log
@@ -211,14 +212,6 @@ func (l *DistributedLog) setupRaft(dataDir string) error {
 	return nil
 }
 
-func newLogStore(dir string, c Config) (*logStore, error) {
-	log, err := NewLog(dir, c)
-	if err != nil {
-		return nil, err
-	}
-	return &logStore{log}, nil
-}
-
 func (l *DistributedLog) Append(record *api.Record) (uint64, error) {
 	res, err := l.apply(AppendRequestType, &api.ProduceRequest{Record: record})
 
@@ -244,7 +237,7 @@ func (l *DistributedLog) apply(reqType RequestType, req proto.Message) (interfac
 		return nil, err
 	}
 
-	b, err := proto.Marshal(req)
+	b, err := proto.Marshal(req) // The req contains the record to be appended
 	if err != nil {
 		return nil, err
 	}
@@ -296,6 +289,10 @@ func (l *fsm) Apply(record *raft.Log) interface{} {
 	// Handle Raft no-op entries (typically sent when a leader is elected)
 	if record.Type == raft.LogNoop || len(buf) == 0 {
 		return nil
+	}
+
+	if len(buf) < 1 {
+		return fmt.Errorf("invalid log entry: too short")
 	}
 
 	reqType := RequestType(buf[0])

@@ -29,9 +29,9 @@ type Agent struct {
 
 	mux cmux.CMux // Connection multiplexer
 
-	log        *DisLog.DistributedLog
+	log        *DisLog.DistributedLog // Distributed log using Raft consensus
 	server     *grpc.Server
-	membership *discovery.Membership
+	membership *discovery.Membership // Service discovery membership
 
 	// Shutdown coordination
 	shutdown     bool
